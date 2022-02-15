@@ -23,3 +23,8 @@
   - 앱에 뿌려줄 API 설계
   - 코드 작성 및 테스트
   - 배포
+
+---
+## Requirement
+- Python 3.9
+- pandas==1.4.1
