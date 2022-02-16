@@ -28,3 +28,6 @@
 ## Requirement
 - Python 3.9
 - pandas==1.4.1
+- bs4==0.0.1
+- requests==2.27.1
+- selenium==4.1.0
