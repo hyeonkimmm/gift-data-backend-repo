@@ -34,3 +34,4 @@
 ---
 ## Coding convention python
 - PEP8 (flake8)
+- https://lintlyci.github.io/Flake8Rules/
