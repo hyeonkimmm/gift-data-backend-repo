@@ -31,3 +31,6 @@
 - bs4==0.0.1
 - requests==2.27.1
 - selenium==4.1.0
+---
+## Coding convention python
+- PEP8 (flake8)
