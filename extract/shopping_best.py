@@ -10,7 +10,7 @@ from selenium import webdriver
 # import os
 
 # Chrome의 경우 | 아까 받은 chromedriver의 위치를 지정해준다.
-driver = webdriver.Chrome('C:\\Users\\hyeon\\Desktop\\side-project\\gift-data-backend-repo\\driver\\chromedriver')
+driver = webdriver.Chrome('C:/Users/hyeon/Desktop/side-project/gift-data-backend-repo/driver/chromedriver')
 driver.implicitly_wait(3)
 driver.get('https://datalab.naver.com/shoppingInsight/sCategory.naver')
 # HTTP GET Request
