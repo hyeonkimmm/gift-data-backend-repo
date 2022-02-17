@@ -9,7 +9,8 @@
   - 성별
   - 금액
   - 추후 추가 ... 
-  - 자동화 (Airflow)  
+  - 자동화 (Airflow)
+  - robots.txt 기준에 맞춰 규정 준수
 ### 2. 저장된 데이터 pands or spark 을 통한 데이터 처리
   - pands -> 스몰 데이터 위추
   - spark -> 분산 처리 필요..?
