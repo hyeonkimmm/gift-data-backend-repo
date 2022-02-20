@@ -8,6 +8,8 @@ bs4 = "*"
 pandas = "*"
 selenium = "*"
 requests = "*"
+chardet = "*"
+jupyter = "*"
 
 [dev-packages]
 flake8 = "*"
