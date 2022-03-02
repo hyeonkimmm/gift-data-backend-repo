@@ -1,4 +1,5 @@
 .vscode
 .ipynb_checkpoints
-data/2022-*
+data/crawling/*
+data/ranking/*
 data/info/naver_api_info.json
