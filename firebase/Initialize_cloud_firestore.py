@@ -1,4 +1,4 @@
-# import firebase_admin
+import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
@@ -10,7 +10,7 @@ cred = credentials.Certificate('data/info/atte2gd-eb088-firebase-adminsdk-bftoy-
 # 재희
 cred = credentials.Certificate('../data/info/atte2jh-firebase-adminsdk-27fq5-24afbf0bb4.json')
 cred = credentials.Certificate('data/info/atte2jh-firebase-adminsdk-27fq5-24afbf0bb4.json')
-# firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 doc_ref = db.collection(u'users').document(u'alovelace')

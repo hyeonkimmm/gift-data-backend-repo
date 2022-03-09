@@ -50,15 +50,14 @@ age, gender, c_id, c_name = info.split('_')
 
 file_list = glob.glob(directory + '/*')
 # TODO : 최신 스코어 점수 업데이트 코드 작성
-result = pd.read_csv(file_list[0])
+result = pd.read_csv(file_list[1])
 # get top5
-result = result.iloc[:5, :]
-# TODO : SettingWithCopyWarning 해결
-result['age'] = age
-result['gender'] = gender
-result['c_id'] = c_id
-result['c_name'] = c_name
-result['date'] = date
+result = result.iloc[:5, :].copy()
+result.loc[:, 'age'] = age
+result.loc[:, 'gender'] = gender
+result.loc[:, 'c_id'] = c_id
+result.loc[:, 'c_name'] = c_name
+result.loc[:, 'date'] = date
 result = result[['date', 'rank', 'age', 'gender', 'c_id', 'c_name', 'keyword']]
 
 # result의 keyword를 naver 쇼핑 api를 통해 검색하고 그 결과값을 계속 keyword, product_info 로 정리한 후 더함
@@ -67,14 +66,15 @@ for i in range(5):
     key = result.loc[i, 'keyword']
     # 값 불러오기
     df, price_df = get_api_result(key)
-    df_json = df.to_json(orient='records', force_ascii=False)
-    price_df['product_info'] = df_json
+    df_dict = df.to_dict(orient='records')
+    # df_json = df.to_json(orient='records', force_ascii=False)
+    price_df['product_info'] = df_dict
     merge_df = pd.concat([merge_df, price_df], axis=1)
 merge_df = merge_df.transpose()
 result = pd.merge(result, merge_df, how='left', on='keyword')
 result['rank'] = result['rank'].astype(object)
-# a = result.to_dict(orient='records')
+a = result.to_dict(orient='records')
 # result.to_dict(orient='index')
 # dict(result.to_dict(orient='records'))
-# final = dict()
-# final['data'] = a
+final = dict()
+final['data'] = a
