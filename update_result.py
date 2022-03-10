@@ -3,10 +3,13 @@ import json
 import pandas as pd
 import requests
 import re
+import glob
 from update_score import get_top5_rank
 from pandas import json_normalize
 
 def get_api_result(search_word, start_num=1):
+    '''
+    '''
     PATH = 'data/info/naver_api_info.json'
     with open(PATH, "r") as json_file:
         user_info = json.load(json_file)
@@ -23,6 +26,7 @@ def get_api_result(search_word, start_num=1):
     df['link'] = 'https://search.shopping.naver.com/catalog/' + df['productId']
     # lprice 타입 변경 및 평균, 표준편차를 통해 최저, 최고 가격 데이터범위 구하기.
     df['lprice'] = df['lprice'].astype('int')
+    # TODO: ValueError: cannot convert float NaN to integer 에러 해결 (NaN 처리 해주기)
     df['mean_price'] = int(df['lprice'].mean())
     df['std_price'] = int(df['lprice'].std())
     # l_price, h_price - 음수 방지
@@ -40,22 +44,29 @@ def get_api_result(search_word, start_num=1):
     df = df[["prduct_rank", "title", "link", "image", "price", "product_id", "brand", "maker", "category1", "category2", "category3", "category4"]]
     return df, price_df
 
+def update_today_best(path):
+    score_path = path + '/score.csv'
+    result = get_top5_rank(score_path)
+    merge_df = pd.DataFrame()
+    for i in range(5):
+        key = result.loc[i, 'keyword']
+        # 값 불러오기
+        df, price_df = get_api_result(key)
+        df_dict = df.to_dict(orient='records')
+        # df_json = df.to_json(orient='records', force_ascii=False)
+        price_df['product_info'] = df_dict
+        merge_df = pd.concat([merge_df, price_df], axis=1)
+    merge_df = merge_df.transpose()
+    result = pd.merge(result, merge_df, how='left', on='keyword')
+    # result['rank'] = result['rank'].astype(object)
+    result.to_csv(path + '/today_best.csv')
+    # a = result.to_dict(orient='records')
+    # final = dict()
+    # final['data'] = a
+
+
 # result의 keyword를 naver 쇼핑 api를 통해 검색하고 그 결과값을 계속 keyword, product_info 로 정리한 후 더함
-result = get_top5_rank()
-merge_df = pd.DataFrame()
-for i in range(5):
-    key = result.loc[i, 'keyword']
-    # 값 불러오기
-    df, price_df = get_api_result(key)
-    df_dict = df.to_dict(orient='records')
-    # df_json = df.to_json(orient='records', force_ascii=False)
-    price_df['product_info'] = df_dict
-    merge_df = pd.concat([merge_df, price_df], axis=1)
-merge_df = merge_df.transpose()
-result = pd.merge(result, merge_df, how='left', on='keyword')
-result['rank'] = result['rank'].astype(object)
-a = result.to_dict(orient='records')
-# result.to_dict(orient='index')
-# dict(result.to_dict(orient='records'))
-final = dict()
-final['data'] = a
+if __name__ == '__main__':
+    all_dir = glob.glob('data/crawling/*')
+    for path in all_dir:
+        update_today_best(path)

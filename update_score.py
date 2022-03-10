@@ -1,12 +1,12 @@
 # data lake의 랭킹 정보를 가져와서, 등수를 업데이트 하는 코드
 import glob
 import pandas as pd
-# from extract.helper import get_date
 import os
-# from collections import defaultdict
 def get_top5_rank(path):
     df = pd.read_csv(path)
-    return df
+    df.reset_index(inplace=True)
+    df['rank'] = df['index'].apply(lambda x: x + 1)
+    return df[:5]
 def delete_file(directory, file_name='/score.csv'):
     '''
     파일 잘못 만들었을 경우 삭제하기 위한 임시 삭제 코드
@@ -94,9 +94,6 @@ def calculation_score(directory):
         print(f'error occurred! {info}')
     else:
         print(f'finish calculated to {info}')
-
-# 오늘 날짜
-# date = get_date(day='today')
 
 if __name__ == '__main__':
     # score 업데이트
