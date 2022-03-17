@@ -5,6 +5,8 @@
 TODO
 1. 헤더정보, 카테고리 정보 json에 저장 후 불러오기
 2. 자동 디렉토리 생성 코드 작성
+3. 카테고리 도서를 여가& 생활편의로 병합
+4. 면세점 제거
 '''
 import os
 from random import randint
@@ -36,6 +38,7 @@ def crawl_rank(headers, data):
 
 if __name__ == '__main__':
     date = get_date()
+    # TODO: 쪼개기
     for cid, item in category.items():
         for age in _AGE_LIST:
             for gender in _GENDER_LIST:
