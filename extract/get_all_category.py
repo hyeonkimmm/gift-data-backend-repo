@@ -1,7 +1,6 @@
 # 네이버 쇼핑 인사이트 기준 모든 카테고리 id 불러오는 코드
 # robots.txt 기준 준수 + 크롤링 중간에 SLEEP_TIME 설정
 # 2022-02-17 hkim
-# TODO: robots.txt 기준 정리
 import requests
 import json
 from collections import deque
