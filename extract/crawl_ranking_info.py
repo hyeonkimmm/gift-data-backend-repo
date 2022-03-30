@@ -15,10 +15,11 @@ import requests
 import json
 import pandas as pd
 from helper import get_date
+# 상관없음 경우 처리
 _PATH = 'data/info/crawl_info.json'
 _MAX_SLEEP_TIME = 10
-_AGE_LIST = ['20', '50']
-_GENDER_LIST = ['m', 'f']
+_AGE_LIST = ['10', '20', '30', '40', '50', 'ALL']
+_GENDER_LIST = ['m', 'f', 'ALL']
 
 with open(_PATH, "r", encoding='utf-8-sig') as json_file:
     crawl_info = json.load(json_file)
@@ -26,13 +27,17 @@ with open(_PATH, "r", encoding='utf-8-sig') as json_file:
     category = crawl_info['root_cat_id']
 
 def crawl_rank(headers, data):
-    response = requests.post('https://datalab.naver.com/shoppingInsight/getCategoryKeywordRank.naver', headers=headers, data=data)
-    item_list = json.loads(response.text)
+    # TODO 에러처리
     directory = f"data/crawling/{data['age']}_{data['gender']}_{data['cid']}_{category[data['cid']].replace('/','&')}"
     if not os.path.exists(directory):
         os.makedirs(directory)
         print('makedirs ' + f'{directory}')
     output_path = directory + '/' + f"{data['startDate']}_{data['endDate']}.csv"
+
+    data['age'] = ', '.join(_AGE_LIST[:-1]) if data['age'] == 'ALL' else data['age']
+    data['gender'] = ', '.join(_GENDER_LIST[:-1]) if data['gender'] == 'ALL' else data['gender']
+    response = requests.post('https://datalab.naver.com/shoppingInsight/getCategoryKeywordRank.naver', headers=headers, data=data)
+    item_list = json.loads(response.text)
     df = pd.json_normalize(item_list['ranks'])[['rank', 'keyword']]
     df.to_csv(output_path, index=False)
 
@@ -54,6 +59,6 @@ if __name__ == '__main__':
                     'count': '20'
                 }
                 crawl_rank(headers, data)
-                rand_value = randint(1, _MAX_SLEEP_TIME)
+                rand_value = randint(5, _MAX_SLEEP_TIME)
                 time.sleep(rand_value)
                 print(f"done {data['startDate']}_{data['endDate']}_{data['age']}_{data['gender']}_{data['cid']}_{category[data['cid']]}")
