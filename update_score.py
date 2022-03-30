@@ -2,11 +2,11 @@
 import glob
 import pandas as pd
 import os
-def get_top5_rank(path):
+def get_top_rank(path, top_rank=20):
     df = pd.read_csv(path)
     df.reset_index(inplace=True)
     df['rank'] = df['index'].apply(lambda x: x + 1)
-    return df[:5]
+    return df[:top_rank]
 def delete_file(directory, file_name='/score.csv'):
     '''
     파일 잘못 만들었을 경우 삭제하기 위한 임시 삭제 코드

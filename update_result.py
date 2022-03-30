@@ -4,7 +4,7 @@ import pandas as pd
 import requests
 import re
 import glob
-from update_score import get_top5_rank
+from update_score import get_top_rank
 from pandas import json_normalize
 
 def get_api_result(search_word='원피스', start_num=1):
@@ -41,35 +41,36 @@ def get_api_result(search_word='원피스', start_num=1):
     df = df[["index", "title", "link", "image", "lprice", "meanPrice", "stdPrice", "lowPrice", "highPrice", "productId", "brand", "maker", "category1", "category2", "category3", "category4"]]
     df.rename(columns={'index': 'productRank', 'lprice': 'productPrice'}, inplace=True)
     df['keyword'] = search_word
-    appInfo = df[["keyword", "lowPrice", "highPrice"]].iloc[0, :]
+    appInfo = df[["keyword", "lowPrice", "highPrice", "meanPrice"]].iloc[0, :]
     appInfo['webUrl'] = web_url
     appInfo['imageUrl'] = df.loc[0, 'image']
-    df = df[["productRank", "title", "link", "image", "productPrice", "productId", "brand", "maker", "category1", "category2", "category3", "category4"]]
+    df = df[["keyword", "productRank", "title", "link", "image", "productPrice", "productId", "brand", "maker", "category1", "category2", "category3", "category4"]]
     return df, appInfo
 
 def update_today_best(path):
     score_path = path + '/score.csv'
-    result = get_top5_rank(score_path)
+    top_rank = 20
+    result = get_top_rank(score_path, top_rank)
     result = result[['rank', 'keyword', 'score']]
     merge_df = pd.DataFrame()
-    for i in range(5):
+    # merge_product = pd.DataFrame()
+    for i in range(top_rank):
         try:
             key = result.loc[i, 'keyword']
             # 값 불러오기
-            df, appInfo = get_api_result(key)
+            productInfo, appInfo = get_api_result(key)
         except Exception:
             print(f'error {key}, {path}')
             raise ValueError
-        # df_dict = df.to_dict(orient='records')
-        # df_json = df.to_json(orient='records', force_ascii=False)
-        # appInfo['product_info'] = df_dict
         merge_df = pd.concat([merge_df, appInfo], axis=1)
+        # df_dict = productInfo.to_dict(orient='records')
+        # merge_product = pd.merge(productInfo, merge_product)
     merge_df = merge_df.transpose()
     merge_df.reset_index(drop=True, inplace=True)
     result = pd.merge(result, merge_df, how='left', on='keyword')
     result.rename(columns={'keyword': 'keyWord'}, inplace=True)
     result.to_csv(path + '/today_best.csv')
-    df.to_csv(path + '/today_best_product.csv')
+    # productInfo.to_csv(path + '/today_best_product.csv')
 
 
 # result의 keyword를 naver 쇼핑 api를 통해 검색하고 그 결과값을 계속 keyword, product_info 로 정리한 후 더함
