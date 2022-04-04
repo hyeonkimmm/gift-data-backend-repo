@@ -4,9 +4,6 @@ import pandas as pd
 import os
 def get_top_rank(path, top_rank=None):
     df = pd.read_csv(path)
-    df.reset_index(inplace=True)
-    df['rank'] = df['index'].apply(lambda x: x + 1)
-    df = df[['rank', 'keyword', 'score']]
     if top_rank is None:
         return df
     else:
