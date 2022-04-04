@@ -1,6 +1,7 @@
 # 디렉토리 별 최신 스코어 불러와서, firebase 업데이트 데이터 만들기
 import json
 import pandas as pd
+import numpy as np
 import requests
 import re
 import glob
@@ -21,7 +22,7 @@ def get_api_result(search_word='원피스', start_num=1):
     json_res = json.loads(requests.get(search_url, headers=_HEADERS).text)
     df = json_normalize(json_res['items'])
     if len(df.index) < 5:
-        return None
+        return pd.Series([np.nan] * 6, index=['lowPrice', 'highPrice', 'meanPrice', 'webUrl', 'imageUrl', 'productInfo'])
     # title b 태그 삭제
     df['title'] = df['title'].apply(lambda x: re.sub('<b>|</b>', '', x))
     # link 수정
@@ -41,46 +42,54 @@ def get_api_result(search_word='원피스', start_num=1):
     df = df[["index", "title", "link", "image", "lprice", "meanPrice", "stdPrice", "lowPrice", "highPrice", "productId", "brand", "maker", "category1", "category2", "category3", "category4"]]
     df.rename(columns={'index': 'productRank', 'lprice': 'productPrice'}, inplace=True)
     df['keyword'] = search_word
-    appInfo = df[["keyword", "lowPrice", "highPrice", "meanPrice"]].iloc[0, :]
+    # appInfo = df[["keyword", "lowPrice", "highPrice", "meanPrice"]].iloc[0, :]
+    appInfo = df[["lowPrice", "highPrice", "meanPrice"]].iloc[0, :]
     appInfo['webUrl'] = web_url
     appInfo['imageUrl'] = df.loc[0, 'image']
     df = df[["keyword", "productRank", "title", "link", "image", "productPrice", "productId", "brand", "maker", "category1", "category2", "category3", "category4"]]
     appInfo['productInfo'] = df.to_dict(orient='records')
-    return (df, appInfo)
+    # return (df, appInfo)
+    return appInfo
 
 def update_today_best(path):
-    score_path = path + '/score.csv'
-    result = get_top_rank(score_path)
-    result = result[['rank', 'keyword', 'score']]
-    merge_df = pd.DataFrame()
     '''
     1. result의 key 값을 넘긴다.
     2. key값을 해당 함수를 통과시켜 결과값을 받아냄.
     3. 해당 결과값을 result에 차곡차곡 쌓는다.
     pandas apply를 활용 시간 효율성 증가.
     '''
-    # merge_product = pd.DataFrame()
-    keyword_count = 0
-    while keyword_count <= _TOP_RANK:
-        try:
-            key = result.loc[keyword_count, 'keyword']
-            # 값 불러오기
-            func_result = get_api_result(key)
-            if func_result:
-                productInfo, appInfo = func_result
-            else:
-                continue
-        except Exception:
-            print(f'error {key}, {path}')
-            raise ValueError
-        merge_df = pd.concat([merge_df, appInfo], axis=1)
-        # df_dict = productInfo.to_dict(orient='records')
-        # merge_product = pd.merge(productInfo, merge_product)
-    merge_df = merge_df.transpose()
-    merge_df.reset_index(drop=True, inplace=True)
-    result = pd.merge(result, merge_df, how='left', on='keyword')
-    result.rename(columns={'keyword': 'keyWord'}, inplace=True)
+    score_path = path + '/score.csv'
+    result = get_top_rank(score_path)
+    result[['lowPrice', 'highPrice', 'meanPrice', 'webUrl', 'imageUrl', 'productInfo']] = result.apply(lambda row: get_api_result(row['keyword']), axis=1)
+    result = result.dropna(axis=0)
+    result.reset_index(inplace=True)
+    result['rank'] = result['index'].apply(lambda x: x + 1)
+    result = result[['rank', 'keyword', 'score', 'lowPrice', 'highPrice', 'meanPrice', 'webUrl', 'imageUrl', 'productInfo']][:_TOP_RANK]
     result.to_csv(path + '/today_best.csv')
+    # legacy code
+    # merge_df = pd.DataFrame()
+    # merge_product = pd.DataFrame()
+    # keyword_count = 0
+    # while keyword_count <= _TOP_RANK:
+    #     try:
+    #         key = result.loc[keyword_count, 'keyword']
+    #         # 값 불러오기
+    #         func_result = get_api_result(key)
+    #         if func_result:
+    #             productInfo, appInfo = func_result
+    #         else:
+    #             continue
+    #     except Exception:
+    #         print(f'error {key}, {path}')
+    #         raise ValueError
+    #     merge_df = pd.concat([merge_df, appInfo], axis=1)
+    #     # df_dict = productInfo.to_dict(orient='records')
+    #     # merge_product = pd.merge(productInfo, merge_product)
+    # merge_df = merge_df.transpose()
+    # merge_df.reset_index(drop=True, inplace=True)
+    # result = pd.merge(result, merge_df, how='left', on='keyword')
+    # result.rename(columns={'keyword': 'keyWord'}, inplace=True)
+    # result.to_csv(path + '/today_best.csv')
     # productInfo.to_csv(path + '/today_best_product.csv')
 
 
