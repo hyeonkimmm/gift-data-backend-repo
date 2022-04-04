@@ -2,11 +2,15 @@
 import glob
 import pandas as pd
 import os
-def get_top_rank(path, top_rank=20):
+def get_top_rank(path, top_rank=None):
     df = pd.read_csv(path)
     df.reset_index(inplace=True)
     df['rank'] = df['index'].apply(lambda x: x + 1)
-    return df[:top_rank]
+    df = df[['rank', 'keyword', 'score']]
+    if top_rank is None:
+        return df
+    else:
+        return df[:top_rank]
 def delete_file(directory, file_name='/score.csv'):
     '''
     파일 잘못 만들었을 경우 삭제하기 위한 임시 삭제 코드
@@ -64,6 +68,7 @@ def calculation_score(directory):
                     # 이미 업데이트 되었으므로 업데이트 하지 않음
                     print(f'already updated {info}')
                 else:
+                    # TODO: 업데이트 날짜와 이전 파일 날짜 비교해서 안된 것 업데이트
                     merge_df = apply_score(path=file_list[-1], merge_df=merge_df)
         else:
             # 스코어 값이 없기 때문에 모든 file 추가

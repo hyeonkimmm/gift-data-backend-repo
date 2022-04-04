@@ -7,27 +7,27 @@ import glob
 from update_score import get_top_rank
 from pandas import json_normalize
 
+_TOP_RANK = 20
+PATH = 'data/info/naver_api_info.json'
+with open(PATH, "r") as json_file:
+    user_info = json.load(json_file)
+    _CLIENT_ID = user_info['client_id']
+    _CLIENT_SECRET = user_info['client_secret']
+_HEADERS = {"X-Naver-Client-Id": _CLIENT_ID, "X-Naver-Client-Secret": _CLIENT_SECRET}
+
 def get_api_result(search_word='원피스', start_num=1):
-    PATH = 'data/info/naver_api_info.json'
-    with open(PATH, "r") as json_file:
-        user_info = json.load(json_file)
-        client_id = user_info['client_id']
-        client_secret = user_info['client_secret']
-    url = f'https://openapi.naver.com/v1/search/shop.json?query={search_word}&display=100&start={str(start_num)}'
-    # 검색용 url
+    search_url = f'https://openapi.naver.com/v1/search/shop.json?query={search_word}&display=100&start={str(start_num)}'
     web_url = f'https://search.shopping.naver.com/search/all?query={search_word}&cat_id=&frm=NVSHATC'
-    headers = {"X-Naver-Client-Id": client_id, "X-Naver-Client-Secret": client_secret}
-    res = requests.get(url, headers=headers)
-    j = json.loads(res.text)
-    df = json_normalize(j['items'])
+    json_res = json.loads(requests.get(search_url, headers=_HEADERS).text)
+    df = json_normalize(json_res['items'])
+    if len(df.index) < 5:
+        return None
     # title b 태그 삭제
     df['title'] = df['title'].apply(lambda x: re.sub('<b>|</b>', '', x))
     # link 수정
     df['link'] = 'https://search.shopping.naver.com/catalog/' + df['productId']
     # lprice 타입 변경 및 평균, 표준편차를 통해 최저, 최고 가격 데이터범위 구하기.
     df['lprice'] = df['lprice'].astype('int').fillna(0)
-    # TODO: ValueError: cannot convert float NaN to integer 에러 해결 (NaN 처리 해주기)
-    # TODO: 검색 결과가 없거나 적은 경우
     df['meanPrice'] = int(df['lprice'].mean())
     df['stdPrice'] = int(df['lprice'].std())
     # lowPrice - 음수 방지
@@ -45,20 +45,31 @@ def get_api_result(search_word='원피스', start_num=1):
     appInfo['webUrl'] = web_url
     appInfo['imageUrl'] = df.loc[0, 'image']
     df = df[["keyword", "productRank", "title", "link", "image", "productPrice", "productId", "brand", "maker", "category1", "category2", "category3", "category4"]]
-    return df, appInfo
+    appInfo['productInfo'] = df.to_dict(orient='records')
+    return (df, appInfo)
 
 def update_today_best(path):
     score_path = path + '/score.csv'
-    top_rank = 20
-    result = get_top_rank(score_path, top_rank)
+    result = get_top_rank(score_path)
     result = result[['rank', 'keyword', 'score']]
     merge_df = pd.DataFrame()
+    '''
+    1. result의 key 값을 넘긴다.
+    2. key값을 해당 함수를 통과시켜 결과값을 받아냄.
+    3. 해당 결과값을 result에 차곡차곡 쌓는다.
+    pandas apply를 활용 시간 효율성 증가.
+    '''
     # merge_product = pd.DataFrame()
-    for i in range(top_rank):
+    keyword_count = 0
+    while keyword_count <= _TOP_RANK:
         try:
-            key = result.loc[i, 'keyword']
+            key = result.loc[keyword_count, 'keyword']
             # 값 불러오기
-            productInfo, appInfo = get_api_result(key)
+            func_result = get_api_result(key)
+            if func_result:
+                productInfo, appInfo = func_result
+            else:
+                continue
         except Exception:
             print(f'error {key}, {path}')
             raise ValueError
