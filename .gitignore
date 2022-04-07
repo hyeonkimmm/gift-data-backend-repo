@@ -4,5 +4,6 @@ data/crawling/*
 data/ranking/*
 data/info/naver_api_info.json
 data/info/atte2*
+data/info/giftatte2*
 __pycache__
 test_code.py
